@@ -11,7 +11,6 @@ app.use(function (req, res, next){
 
 //main method 
 app.get('/', (req, res) => {
-    //TODO: serve the inventory open api yaml here
     res.send('Inventory service will serve Open API YAML soon');
 });
 
