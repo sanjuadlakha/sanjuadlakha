@@ -19,37 +19,41 @@ app.get('/', (req, res) => {
 app.get('/item/:SKUId', (req, res) => {
     console.log('/item');
     console.log('SKUID:'+req.params.SKUId);
-    res.send('Item with SKUID:'+req.params.SKUId+'\n XHz Milk chocolate 100g 032022');
+    var item = {'SKUID':req.params.SKUId ,'Name':'BrandX','Type':'Milk chocolate', 'Weight':'100g','ExpiryDate': '032022'};
+    res.send(JSON.stringify(item));
 });
 
 //get items array
 app.get('/items', (req, res) => {
     console.log('/items');
-    console.log('No items in inventory');
-    res.send('No items in inventory');
+    var status = {'status':'No items in inventory'};
+    console.log(JSON.stringify(status));
+    res.send(JSON.stringify(status));
 });
 
 //insert item
 app.post('/item', (req, res) => {
     console.log('/item insert');
-    //TODO: get body params, send and print
-    console.log('Item created');
-    res.send('Item created');
+    var status = {'status':'Item created'};
+    console.log(JSON.stringify(status));
+    res.send(JSON.stringify(status));   
 });
 
 
 //update item
 app.put('/item', (req, res) => {
     console.log('/item update');
-    console.log('Item updated');
-    res.send('Item updated');
+    var status = {'status':'Item updated'};
+    console.log(JSON.stringify(status));
+    res.send(JSON.stringify(status));   
 });
 
 //delete item
 app.delete('/item', (req, res) => {
     console.log('/item delete');
-    console.log('Item deleted');
-    res.send('Item deleted');
+    var status = {'status':'Item deleted'};
+    console.log(JSON.stringify(status));
+    res.send(JSON.stringify(status));   
 });
 
 //app start
