@@ -88,7 +88,7 @@ jobs:
           git checkout -b "$BRANCH_NAME"
 
           # Create feature structure
-          mkdir -p src/features/WI-${WORK_ITEM_ID}
+          mkdir -p src/features/WI-${WORK_ITEM_ID}/__tests__
 
           cat > "src/features/WI-${WORK_ITEM_ID}/index.js" << 'EOF'
           // Feature: ${FEATURE_TITLE}
