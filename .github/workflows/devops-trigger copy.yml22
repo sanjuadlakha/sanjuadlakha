@@ -295,7 +295,28 @@ jobs:
 
             core.setOutput('pr_number', pr.data.number);
             core.setOutput('pr_url', pr.data.html_url);
-            console.log('💡 Copilot will be triggered via @copilot mention in the next step');
+
+            // Assign Copilot to PR - try different bot name patterns
+            const botNames = ['copilot[bot]', 'copilot', 'github-copilot', 'github[bot]'];
+            let assigned = false;
+            for (const botName of botNames) {
+              try {
+                await github.rest.issues.addAssignees({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: pr.data.number,
+                  assignees: [botName]
+                });
+                console.log(`✅ Assigned ${botName} to PR #${pr.data.number}`);
+                assigned = true;
+                break;
+              } catch (error) {
+                console.log(`⚠️  Failed with ${botName}: ${error.message}`);
+              }
+            }
+            if (!assigned) {
+              console.log('⚠️  Could not auto-assign Copilot - manual assignment may be needed');
+            }
 
             return pr.data.number;
 
