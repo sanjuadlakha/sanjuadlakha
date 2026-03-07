@@ -178,13 +178,20 @@ jobs:
             core.setOutput('issue_number', issue.data.number);
             
             // Assign Copilot as assignee
-            await github.rest.issues.addAssignees({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: issue.data.number,
-              assignees: ['copilot[bot]']
-            });
-            console.log('✅ Assigned copilot[bot] to issue #' + issue.data.number);
+            try {
+              const assignResult = await github.rest.issues.addAssignees({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.data.number,
+                assignees: ['copilot[bot]']
+              });
+              console.log('✅ Assigned copilot[bot] to issue #' + issue.data.number);
+              console.log('Assignees:', assignResult.data.assignees.map(a => a.login));
+            } catch (error) {
+              console.error('❌ Assignment failed:', error.message);
+              console.error('Status:', error.status);
+              throw error;
+            }
             
             return issue.data.number;
 
@@ -284,13 +291,20 @@ jobs:
             core.setOutput('pr_url', pr.data.html_url);
 
             // Assign Copilot to PR
-            await github.rest.issues.addAssignees({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: pr.data.number,
-              assignees: ['copilot[bot]']
-            });
-            console.log('✅ Assigned copilot[bot] to PR #' + pr.data.number);
+            try {
+              const assignResult = await github.rest.issues.addAssignees({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: pr.data.number,
+                assignees: ['copilot[bot]']
+              });
+              console.log('✅ Assigned copilot[bot] to PR #' + pr.data.number);
+              console.log('Assignees:', assignResult.data.assignees.map(a => a.login));
+            } catch (error) {
+              console.error('❌ Assignment failed:', error.message);
+              console.error('Status:', error.status);
+              throw error;
+            }
 
             return pr.data.number;
 

@@ -72,13 +72,20 @@ jobs:
             console.log('Created issue #', issue.data.number);
 
             // Assign Copilot as assignee
-            await github.rest.issues.addAssignees({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: issue.data.number,
-              assignees: ['copilot[bot]']
-            });
-            console.log('✅ Assigned copilot[bot] to issue #' + issue.data.number);
+            try {
+              const assignResult = await github.rest.issues.addAssignees({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.data.number,
+                assignees: ['copilot[bot]']
+              });
+              console.log('✅ Assigned copilot[bot] to issue #' + issue.data.number);
+              console.log('Assignees:', assignResult.data.assignees.map(a => a.login));
+            } catch (error) {
+              console.error('❌ Assignment failed:', error.message);
+              console.error('Status:', error.status);
+              throw error;
+            }
 
       - name: Create Feature Branch
         id: create-files
@@ -153,13 +160,20 @@ jobs:
             console.log('PR created:', pr.data.number);
 
             // Assign Copilot to PR
-            await github.rest.issues.addAssignees({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: pr.data.number,
-              assignees: ['copilot[bot]']
-            });
-            console.log('✅ Assigned copilot[bot] to PR #' + pr.data.number);
+            try {
+              const assignResult = await github.rest.issues.addAssignees({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: pr.data.number,
+                assignees: ['copilot[bot]']
+              });
+              console.log('✅ Assigned copilot[bot] to PR #' + pr.data.number);
+              console.log('Assignees:', assignResult.data.assignees.map(a => a.login));
+            } catch (error) {
+              console.error('❌ Assignment failed:', error.message);
+              console.error('Status:', error.status);
+              throw error;
+            }
 
       - name: Trigger Copilot
         uses: actions/github-script@v7
