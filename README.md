@@ -49,6 +49,7 @@ CREATE TABLE users (
 | POST | `/api/auth/logout` | JWT | Logout |
 | GET | `/api/auth/me` | JWT | Get current user |
 | GET | `/api/users` | Admin | List users (pagination + search) |
+| GET | `/api/users/stats` | Admin | Get user statistics (counts) |
 | GET | `/api/users/:id` | Admin/Owner | Get user by ID |
 | POST | `/api/users` | Admin | Create user |
 | PUT | `/api/users/:id` | Admin/Owner | Update user profile |
