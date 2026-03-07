@@ -65,8 +65,9 @@ jobs:
             2. Draft PR created
             3. Copilot AI implements the feature
             4. PR ready for review`,
-                        labels: ['feature-development','copilot-agent']
-                        });
+              labels: ['feature-development','copilot-agent'],
+              assignees: ['copilot']
+            });
 
             core.setOutput('issue_number', issue.data.number);
             console.log('Created issue #', issue.data.number);
@@ -137,7 +138,15 @@ jobs:
                         
             Work Item: #${workItemId}
             Issue: #${issueNumber}`,
-                        draft: true
+              draft: true
+            });
+
+            // Assign Copilot to PR
+            await github.rest.issues.addAssignees({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: pr.data.number,
+              assignees: ['copilot']
             });
 
             core.setOutput('pr_number', pr.data.number);
