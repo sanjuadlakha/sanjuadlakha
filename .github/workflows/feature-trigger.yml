@@ -71,136 +71,50 @@ jobs:
             core.setOutput('issue_number', issue.data.number);
             console.log('Created issue #', issue.data.number);
 
-            // Assign Copilot as assignee - try different bot name patterns
-            const botNames = ['copilot[bot]', 'copilot', 'github-copilot', 'github[bot]'];
-            let assigned = false;
-            for (const botName of botNames) {
-              try {
-                await github.rest.issues.addAssignees({
-                  owner: context.repo.owner,
-                  repo: context.repo.repo,
-                  issue_number: issue.data.number,
-                  assignees: [botName]
-                });
-                console.log(`✅ Assigned ${botName} to issue #${issue.data.number}`);
-                assigned = true;
-                break;
-              } catch (error) {
-                console.log(`⚠️  Failed with ${botName}: ${error.message}`);
-              }
-            }
-            if (!assigned) {
-              console.log('⚠️  Could not auto-assign Copilot - manual assignment may be needed');
-            }
-
-      - name: Create Feature Branch
-        id: create-files
-        run: |
-          WORK_ITEM_ID="${{ steps.extract.outputs.work_item_id }}"
-          FEATURE_TITLE="${{ steps.extract.outputs.feature_title }}"
-          TIMESTAMP=$(date +%s)
-          BRANCH_NAME="feature/WI-${WORK_ITEM_ID}-${TIMESTAMP}"
-
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-
-          git fetch origin
-          git checkout master || git checkout main
-          git pull origin master || git pull origin main
-          git checkout -b "$BRANCH_NAME"
-
-          # Create feature structure
-          mkdir -p src/features/WI-${WORK_ITEM_ID}/__tests__
-
-          cat > "src/features/WI-${WORK_ITEM_ID}/index.js" << 'EOF'
-          // Feature: ${FEATURE_TITLE}
-          // Work Item: ${WORK_ITEM_ID}
-          // TODO: Implement feature
-          
-          export default {};
-          EOF
-
-          cat > "src/features/WI-${WORK_ITEM_ID}/__tests__/index.test.js" << 'EOF'
-          // Tests for ${FEATURE_TITLE}
-          describe('Feature: ${FEATURE_TITLE}', () => {
-            // TODO: Add tests
-          });
-          EOF
-
-          git add .
-          git commit -m "feat(WI-${WORK_ITEM_ID}): Initialize ${FEATURE_TITLE}"
-          git push origin "$BRANCH_NAME"
-
-          echo "branch_name=$BRANCH_NAME" >> $GITHUB_OUTPUT
-
-      - name: Create Pull Request
-        id: create-pr
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const workItemId = '${{ steps.extract.outputs.work_item_id }}';
-            const featureTitle = '${{ steps.extract.outputs.feature_title }}';
-            const branchName = '${{ steps.create-files.outputs.branch_name }}';
-            const issueNumber = '${{ steps.create-issue.outputs.issue_number }}';
-
-            const repo = await github.rest.repos.get({
-              owner: context.repo.owner,
-              repo: context.repo.repo
-            });
-            const baseBranch = repo.data.default_branch || 'master';
-
-            const pr = await github.rest.pulls.create({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              title: `🚀 ${featureTitle} (WI #${workItemId})`,
-              head: branchName,
-              base: baseBranch,
-              body: `## Feature Implementation
-                        
-            Work Item: #${workItemId}
-            Issue: #${issueNumber}`,
-              draft: true
-            });
-
-            core.setOutput('pr_number', pr.data.number);
-            console.log('PR created:', pr.data.number);
-
-            // Request Copilot as reviewer on PR
+            // Assign Copilot coding agent using the correct API
             try {
-              await github.rest.pulls.requestReviewers({
+              // Use raw request to include agent_assignment parameter
+              await github.request('POST /repos/{owner}/{repo}/issues/{issue_number}/assignees', {
                 owner: context.repo.owner,
                 repo: context.repo.repo,
-                pull_number: pr.data.number,
-                reviewers: ['copilot[bot]']
+                issue_number: issue.data.number,
+                assignees: ['copilot-swe-agent[bot]'],
+                agent_assignment: {
+                  target_repo: `${context.repo.owner}/${context.repo.repo}`,
+                  base_branch: 'master',
+                  custom_instructions: `Implement this feature: ${featureTitle}\n\nDescription: ${featureDescription}`,
+                  custom_agent: '',
+                  model: ''
+                }
               });
-              console.log('✅ Requested copilot[bot] as reviewer on PR #' + pr.data.number);
+              console.log('✅ Assigned copilot-swe-agent[bot] to issue #' + issue.data.number);
+              console.log('🚀 Copilot coding agent will now start working on the feature!');
             } catch (error) {
-              console.log('⚠️  Could not request copilot[bot] as reviewer:', error.message);
+              console.error('❌ Failed to assign Copilot coding agent:', error.message);
+              console.log('Status:', error.status);
+              // Don't throw - continue with workflow
             }
 
-      - name: Trigger Copilot
+      - name: Summary
         uses: actions/github-script@v7
         with:
           script: |
-            const prNumber = ${{ steps.create-pr.outputs.pr_number }};
+            const issueNumber = '${{ steps.create-issue.outputs.issue_number }}';
             const workItemId = '${{ steps.extract.outputs.work_item_id }}';
             const featureTitle = '${{ steps.extract.outputs.feature_title }}';
             
-            await github.rest.issues.createComment({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: prNumber,
-              body: `@copilot Implement this feature: **${featureTitle}**
-
-            Please provide:
-            1. Complete implementation code
-            2. Unit tests (80%+ coverage)
-            3. Documentation
-
-            Files to update:
-            - src/features/WI-${workItemId}/index.js
-            - src/features/WI-${workItemId}/__tests__/index.test.js`
-            });
-            
-            console.log('Copilot triggered on PR #' + prNumber);
+            console.log('========================================');
+            console.log('🎉 WORKFLOW COMPLETE');
+            console.log('========================================');
+            console.log(`Issue #${issueNumber} created for: ${featureTitle}`);
+            console.log(`Work Item: WI-${workItemId}`);
+            console.log('');
+            console.log('🤖 Copilot coding agent has been assigned!');
+            console.log('   - Copilot will create its own branch (copilot/...)');
+            console.log('   - Copilot will implement the feature');
+            console.log('   - Copilot will create a PR');
+            console.log('   - Copilot will request your review when done');
+            console.log('');
+            console.log(`View issue: https://github.com/${context.repo.owner}/${context.repo.repo}/issues/${issueNumber}`);
+            console.log('========================================');
 
