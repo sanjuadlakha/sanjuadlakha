@@ -277,53 +277,34 @@ jobs:
 
       - name: Trigger Copilot AI Coding Agent
         id: ai-agent
-        uses: actions/ai-inference@v1
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          pr_number: ${{ steps.create-pr.outputs.pr_number }}
-          task: |
-            You are a test case generation specialist. Analyze the Azure DevOps work item details and generate comprehensive test cases.
-            
-            Work Item ID: ${{ steps.extract.outputs.work_item_id }}
-            
-            Generate the following:
-            1. Integration validation tests (minimum 5 cases)
-            2. Policy compliance tests (minimum 3 cases)
-            3. End-to-end test scenarios (minimum 4 cases)
-            4. Regression test cases (minimum 3 cases)
-            5. Test execution scripts in bash
-            
-            Update these files in the PR:
-            - test-cases/WI-${{ steps.extract.outputs.work_item_id }}-testcases.md
-            - test-cases/WI-${{ steps.extract.outputs.work_item_id }}-testcases.json
-            - test-execution/WI-${{ steps.extract.outputs.work_item_id }}-test-scripts.sh
-            
-            Ensure code coverage target of 80% or higher.
-          labels: test-generation,test-execution,copilot-agent
-          auto_assign: true
-
-      - name: Add AI Agent Comment to PR
         uses: actions/github-script@v7
-        if: success()
         with:
           script: |
             const prNumber = ${{ steps.create-pr.outputs.pr_number }};
             const workItemId = '${{ steps.extract.outputs.work_item_id }}';
             
+            // Add @copilot mention to trigger the AI agent
             await github.rest.issues.createComment({
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number: prNumber,
-              body: `@copilot I need you to generate comprehensive test cases for Work Item #${workItemId}. Please analyze the requirements and generate:
-              
-              1. **Integration Validation Tests** - Minimum 5 test cases
-              2. **Policy Compliance Tests** - Minimum 3 test cases
-              3. **End-to-End Test Scenarios** - Minimum 4 test cases
-              4. **Regression Test Cases** - Minimum 3 test cases
-              5. **Test Execution Scripts** - Bash scripts for test automation
-              
-              Update the placeholder files with complete, production-ready test cases.
-              Target code coverage: 80% or higher.`
+              body: `@copilot I need you to generate comprehensive test cases for Work Item #${workItemId}.
+
+Please analyze the requirements and generate:
+
+1. **Integration Validation Tests** - Minimum 5 test cases
+2. **Policy Compliance Tests** - Minimum 3 test cases  
+3. **End-to-End Test Scenarios** - Minimum 4 test cases
+4. **Regression Test Cases** - Minimum 3 test cases
+5. **Test Execution Scripts** - Bash scripts for test automation
+
+Update the placeholder files with complete, production-ready test cases:
+- test-cases/WI-${workItemId}-testcases.md
+- test-cases/WI-${workItemId}-testcases.json
+- test-execution/WI-${workItemId}-test-scripts.sh
+
+Target code coverage: 80% or higher.`
             });
             
-            console.log('Copilot agent invoked on PR #' + prNumber);
+            console.log('Copilot agent triggered on PR #' + prNumber);
+            core.setOutput('ai_agent_triggered', true);
