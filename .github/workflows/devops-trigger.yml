@@ -290,21 +290,21 @@ jobs:
               issue_number: prNumber,
               body: `@copilot I need you to generate comprehensive test cases for Work Item #${workItemId}.
 
-Please analyze the requirements and generate:
+            Please analyze the requirements and generate:
 
-1. **Integration Validation Tests** - Minimum 5 test cases
-2. **Policy Compliance Tests** - Minimum 3 test cases  
-3. **End-to-End Test Scenarios** - Minimum 4 test cases
-4. **Regression Test Cases** - Minimum 3 test cases
-5. **Test Execution Scripts** - Bash scripts for test automation
+            1. **Integration Validation Tests** - Minimum 5 test cases
+            2. **Policy Compliance Tests** - Minimum 3 test cases  
+            3. **End-to-End Test Scenarios** - Minimum 4 test cases
+            4. **Regression Test Cases** - Minimum 3 test cases
+            5. **Test Execution Scripts** - Bash scripts for test automation
 
-Update the placeholder files with complete, production-ready test cases:
-- test-cases/WI-${workItemId}-testcases.md
-- test-cases/WI-${workItemId}-testcases.json
-- test-execution/WI-${workItemId}-test-scripts.sh
+            Update the placeholder files with complete, production-ready test cases:
+            - test-cases/WI-${workItemId}-testcases.md
+            - test-cases/WI-${workItemId}-testcases.json
+            - test-execution/WI-${workItemId}-test-scripts.sh
 
-Target code coverage: 80% or higher.`
-            });
+            Target code coverage: 80% or higher.`
+                        });
             
             console.log('Copilot agent triggered on PR #' + prNumber);
             core.setOutput('ai_agent_triggered', true);
