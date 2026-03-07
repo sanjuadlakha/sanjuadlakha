@@ -177,17 +177,26 @@ jobs:
 
             core.setOutput('issue_number', issue.data.number);
             
-            // Assign Copilot as assignee
-            try {
-              await github.rest.issues.addAssignees({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: issue.data.number,
-                assignees: ['copilot']
-              });
-              console.log('Assigned Copilot to issue #', issue.data.number);
-            } catch (error) {
-              console.log('Note: Could not auto-assign Copilot, may need manual assignment');
+            // Assign Copilot as assignee - try different bot name patterns
+            const botNames = ['copilot[bot]', 'copilot', 'github-copilot', 'github[bot]'];
+            let assigned = false;
+            for (const botName of botNames) {
+              try {
+                await github.rest.issues.addAssignees({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: issue.data.number,
+                  assignees: [botName]
+                });
+                console.log(`✅ Assigned ${botName} to issue #${issue.data.number}`);
+                assigned = true;
+                break;
+              } catch (error) {
+                console.log(`⚠️  Failed with ${botName}: ${error.message}`);
+              }
+            }
+            if (!assigned) {
+              console.log('⚠️  Could not auto-assign Copilot - manual assignment may be needed');
             }
             
             return issue.data.number;
@@ -287,17 +296,26 @@ jobs:
             core.setOutput('pr_number', pr.data.number);
             core.setOutput('pr_url', pr.data.html_url);
 
-            // Assign Copilot to PR
-            try {
-              await github.rest.issues.addAssignees({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: pr.data.number,
-                assignees: ['copilot']
-              });
-              console.log('Assigned Copilot to PR #', pr.data.number);
-            } catch (error) {
-              console.log('Note: Could not auto-assign Copilot, may need manual assignment');
+            // Assign Copilot to PR - try different bot name patterns
+            const botNames = ['copilot[bot]', 'copilot', 'github-copilot', 'github[bot]'];
+            let assigned = false;
+            for (const botName of botNames) {
+              try {
+                await github.rest.issues.addAssignees({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: pr.data.number,
+                  assignees: [botName]
+                });
+                console.log(`✅ Assigned ${botName} to PR #${pr.data.number}`);
+                assigned = true;
+                break;
+              } catch (error) {
+                console.log(`⚠️  Failed with ${botName}: ${error.message}`);
+              }
+            }
+            if (!assigned) {
+              console.log('⚠️  Could not auto-assign Copilot - manual assignment may be needed');
             }
 
             return pr.data.number;
