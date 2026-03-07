@@ -1,0 +1,316 @@
+name: DevOps Trigger - Test Case Generation
+
+on:
+  repository_dispatch:
+    types: 
+      - azure-devops-workitem
+      - azure-devops-workitem-created
+      - devops-workitem-created
+      - devops-test-trigger
+  workflow_dispatch:
+    inputs:
+      workItemId:
+        description: 'Work Item ID'
+        required: true
+      title:
+        description: 'Work Item Title'
+        required: true
+
+jobs:
+  generate-test-cases:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Extract Work Item Details
+        id: extract
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const payload = context.payload.client_payload;
+            console.log('Extracting work item details from payload...');
+
+            let workItemId = payload?.workItemId ||
+                             payload?.resource?.id ||
+                             payload?.resource?.workItemId ||
+                             payload?.original?.resource?.id;
+
+            console.log('Extracted Work Item ID:', workItemId);
+            core.setOutput('work_item_id', workItemId);
+
+            return workItemId;
+
+      - name: Create GitHub Issue to Trigger Copilot Agent
+        id: create-issue
+        uses: actions/github-script@v7
+        with:
+          script: |
+            // DEBUG: Log the entire payload structure
+            console.log('======================================');
+            console.log('FULL CONTEXT PAYLOAD:');
+            console.log(JSON.stringify(context.payload, null, 2));
+            console.log('======================================');
+
+            const payload = context.payload.client_payload;
+
+            console.log('CLIENT PAYLOAD:');
+            console.log(JSON.stringify(payload, null, 2));
+            console.log('======================================');
+
+            // Extract work item details from Azure DevOps webhook payload
+            // Support both simplified and full Azure DevOps payload structures
+
+            // Try simplified structure first (for manual triggers)
+            let workItemId = payload?.workItemId;
+            let workItemTitle = payload?.title;
+            let workItemType = payload?.type;
+            let workItemState = payload?.state;
+
+            console.log('Attempt 1 - Simplified structure:');
+            console.log('workItemId:', workItemId);
+            console.log('title:', workItemTitle);
+
+            // If not found, try Azure DevOps full webhook structure
+            if (!workItemId && payload?.original?.resource) {
+              const resource = payload.original.resource;
+              workItemId = resource.id;
+              workItemTitle = resource.fields?.['System.Title'];
+              workItemType = resource.fields?.['System.WorkItemType'];
+              workItemState = resource.fields?.['System.State'];
+
+              console.log('Attempt 2 - Azure DevOps original.resource:');
+              console.log('workItemId:', workItemId);
+              console.log('title:', workItemTitle);
+            }
+
+            // If still not found, try direct resource path
+            if (!workItemId && payload?.resource) {
+              workItemId = payload.resource.id || payload.resource.workItemId;
+              workItemTitle = payload.resource.fields?.['System.Title'];
+              workItemType = payload.resource.fields?.['System.WorkItemType'];
+              workItemState = payload.resource.fields?.['System.State'];
+
+              console.log('Attempt 3 - Direct resource:');
+              console.log('workItemId:', workItemId);
+              console.log('title:', workItemTitle);
+            }
+
+            // Set defaults if still undefined
+            workItemId = workItemId || 'Unknown';
+            workItemTitle = workItemTitle || 'Unknown';
+            workItemType = workItemType || 'Unknown';
+            workItemState = workItemState || 'New';
+
+            console.log('======================================');
+            console.log('FINAL Extracted Work Item Details:');
+            console.log('ID:', workItemId);
+            console.log('Title:', workItemTitle);
+            console.log('Type:', workItemType);
+            console.log('State:', workItemState);
+            console.log('======================================');
+
+            const commitSha = '${{ steps.commit.outputs.sha }}';
+            const shortSha = '${{ steps.commit.outputs.short_sha }}';
+            const commitMessage = '${{ steps.commit.outputs.message }}';
+            const commitAuthor = '${{ steps.commit.outputs.author }}';
+            const commitUrl = '${{ steps.commit.outputs.url }}';
+
+            const bodyLines = [
+              '## 🤖 Test Case Generation with GitHub Copilot',
+              '',
+              '**A draft Pull Request will be created and GitHub Copilot coding agent will generate comprehensive test cases.**',
+              '',
+              '**Work Item ID:** ' + workItemId,
+              '',
+              '## 🧾 Work Item Details',
+              '- **ID**: ' + workItemId,
+              '- **Title**: ' + workItemTitle,
+              '- **Type**: ' + workItemType,
+              '- **State**: ' + workItemState,
+              '',
+              '## 📦 Latest Code Commit',
+              '- **Commit SHA**: [' + shortSha + '](' + commitUrl + ')',
+              '- **Author**: ' + commitAuthor,
+              '- **Message**: ' + commitMessage,
+              '',
+              '## 🎯 What Will Happen',
+              '1. A branch will be automatically created with placeholder test case files',
+              '2. A draft Pull Request will be created automatically',
+              '3. GitHub Copilot coding agent will be invoked with @copilot mention in the PR',
+              '4. Copilot will analyze the work item and generate:',
+              '   - Integration validation tests',
+              '   - Policy compliance tests',
+              '   - End-to-end test scenarios',
+              '   - Regression test cases',
+              '   - Test execution scripts',
+              '5. You can review and interact with Copilot in the PR',
+              '6. Once approved, merge the PR',
+              '7. Test cases will be attached to Azure DevOps',
+              '',
+              '## ✅ Success Criteria',
+              '- [ ] Branch created with placeholder files',
+              '- [ ] Draft PR created with @copilot mention',
+              '- [ ] GitHub Copilot coding agent responds in PR',
+              '- [ ] Copilot generates comprehensive test cases',
+              '- [ ] Minimum 15 test cases across all categories',
+              '- [ ] Test execution scripts included',
+              '- [ ] Code coverage target: 80%',
+              '- [ ] PR reviewed and approved',
+              '- [ ] PR merged to main',
+              '- [ ] Test cases attached to Azure DevOps work item',
+              '',
+              '**Triggered automatically from Azure DevOps**',
+              '[View Commit](' + commitUrl + ')'
+            ];
+
+            const issue = await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `🧪 Test Cases + Execution for WI #${workItemId} (Commit ${shortSha})`,
+              body: bodyLines.join('\n'),
+              labels: ['test-generation','test-execution','azure-devops-trigger','copilot-agent']
+            });
+
+            console.log('Created tracking issue #', issue.data.number);
+            console.log('Issue URL:', issue.data.html_url);
+
+            core.setOutput('issue_number', issue.data.number);
+            return issue.data.number;
+
+      - name: Create Branch and Initial Test Structure
+        id: create-files
+        run: |
+          WORK_ITEM_ID="${{ steps.extract.outputs.work_item_id }}"
+          TIMESTAMP=$(date +%s)
+          BRANCH_NAME="test-cases/WI-${WORK_ITEM_ID}-${TIMESTAMP}"
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git checkout -b "$BRANCH_NAME"
+
+          mkdir -p test-cases
+          mkdir -p test-execution
+          mkdir -p regression-analysis
+
+          cat > "test-cases/WI-${WORK_ITEM_ID}-testcases.md" << 'EOF'
+          # Test Cases for Work Item
+          Generated by GitHub Copilot
+          EOF
+
+          cat > "test-cases/WI-${WORK_ITEM_ID}-testcases.json" << 'EOF'
+          {
+            "workItemId": "${{ steps.extract.outputs.work_item_id }}",
+            "testCases": []
+          }
+          EOF
+
+          cat > "test-execution/WI-${WORK_ITEM_ID}-test-scripts.sh" << 'EOF'
+          #!/bin/bash
+          echo "Test execution placeholder"
+          EOF
+
+          chmod +x "test-execution/WI-${WORK_ITEM_ID}-test-scripts.sh"
+
+          git add .
+          git commit -m "Initialize test case structure for Work Item #${WORK_ITEM_ID}"
+          git push origin "$BRANCH_NAME"
+
+          echo "branch_name=$BRANCH_NAME" >> $GITHUB_OUTPUT
+
+      - name: Create Pull Request and Invoke GitHub Copilot
+        id: create-pr
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const workItemId = '${{ steps.extract.outputs.work_item_id }}';
+            const issueNumber = '${{ steps.create-issue.outputs.issue_number }}';
+            const branchName = '${{ steps.create-files.outputs.branch_name }}';
+
+            const prBody = `## 🤖 GitHub Copilot Test Case Generation Request
+
+            Work Item: ${workItemId}
+            Tracking Issue: #${issueNumber}
+
+            Please generate integration, policy, E2E, and regression tests.
+
+            Update the placeholder files in this branch with real test cases.
+            `;
+
+            const pr = await github.rest.pulls.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `Copilot Agent Test Cases for Work Item #${workItemId}`,
+              head: branchName,
+              base: 'main',
+              body: prBody,
+              draft: true
+            });
+
+            console.log('Draft PR created:', pr.data.number);
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issueNumber,
+              body: `Draft PR created: ${pr.data.html_url}`
+            });
+
+            core.setOutput('pr_number', pr.data.number);
+            core.setOutput('pr_url', pr.data.html_url);
+
+            return pr.data.number;
+
+      - name: Trigger Copilot AI Coding Agent
+        id: ai-agent
+        uses: actions/ai-inference@v1
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          pr_number: ${{ steps.create-pr.outputs.pr_number }}
+          task: |
+            You are a test case generation specialist. Analyze the Azure DevOps work item details and generate comprehensive test cases.
+            
+            Work Item ID: ${{ steps.extract.outputs.work_item_id }}
+            
+            Generate the following:
+            1. Integration validation tests (minimum 5 cases)
+            2. Policy compliance tests (minimum 3 cases)
+            3. End-to-end test scenarios (minimum 4 cases)
+            4. Regression test cases (minimum 3 cases)
+            5. Test execution scripts in bash
+            
+            Update these files in the PR:
+            - test-cases/WI-${{ steps.extract.outputs.work_item_id }}-testcases.md
+            - test-cases/WI-${{ steps.extract.outputs.work_item_id }}-testcases.json
+            - test-execution/WI-${{ steps.extract.outputs.work_item_id }}-test-scripts.sh
+            
+            Ensure code coverage target of 80% or higher.
+          labels: test-generation,test-execution,copilot-agent
+          auto_assign: true
+
+      - name: Add AI Agent Comment to PR
+        uses: actions/github-script@v7
+        if: success()
+        with:
+          script: |
+            const prNumber = ${{ steps.create-pr.outputs.pr_number }};
+            const workItemId = '${{ steps.extract.outputs.work_item_id }}';
+            
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: prNumber,
+              body: `@copilot I need you to generate comprehensive test cases for Work Item #${workItemId}. Please analyze the requirements and generate:
+              
+              1. **Integration Validation Tests** - Minimum 5 test cases
+              2. **Policy Compliance Tests** - Minimum 3 test cases
+              3. **End-to-End Test Scenarios** - Minimum 4 test cases
+              4. **Regression Test Cases** - Minimum 3 test cases
+              5. **Test Execution Scripts** - Bash scripts for test automation
+              
+              Update the placeholder files with complete, production-ready test cases.
+              Target code coverage: 80% or higher.`
+            });
+            
+            console.log('Copilot agent invoked on PR #' + prNumber);
