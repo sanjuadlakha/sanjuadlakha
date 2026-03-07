@@ -1,0 +1,287 @@
+name: DevOps Trigger - Feature Development
+
+on:
+  repository_dispatch:
+    types: 
+      - azure-devops-feature
+      - azure-devops-feature-created
+      - devops-feature-created
+      - feature-trigger
+  workflow_dispatch:
+    inputs:
+      workItemId:
+        description: 'Work Item ID'
+        required: true
+      title:
+        description: 'Feature Title'
+        required: true
+
+jobs:
+  generate-feature:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Extract Feature Details
+        id: extract
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const payload = context.payload.client_payload;
+            console.log('Extracting feature details from payload...');
+
+            let workItemId = payload?.workItemId ||
+                             payload?.resource?.id ||
+                             payload?.resource?.workItemId ||
+                             payload?.original?.resource?.id;
+
+            let featureTitle = payload?.title || 'New Feature';
+            let featureType = payload?.type || 'Feature';
+            let featureDescription = payload?.description || 'Feature implementation';
+
+            console.log('Extracted Work Item ID:', workItemId);
+            console.log('Feature Title:', featureTitle);
+            core.setOutput('work_item_id', workItemId);
+            core.setOutput('feature_title', featureTitle);
+            core.setOutput('feature_type', featureType);
+
+            return workItemId;
+
+      - name: Create GitHub Issue for Feature Development
+        id: create-issue
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const payload = context.payload.client_payload;
+
+            // Extract feature details
+            let workItemId = payload?.workItemId;
+            let featureTitle = payload?.title;
+            let featureType = payload?.type;
+            let featureState = payload?.state;
+            let featureDescription = payload?.description;
+
+            // Set defaults
+            workItemId = workItemId || 'Unknown';
+            featureTitle = featureTitle || 'Unknown Feature';
+            featureType = featureType || 'Feature';
+            featureState = featureState || 'New';
+            featureDescription = featureDescription || 'Feature implementation in progress';
+
+            console.log('======================================');
+            console.log('FINAL Extracted Feature Details:');
+            console.log('ID:', workItemId);
+            console.log('Title:', featureTitle);
+            console.log('Type:', featureType);
+            console.log('State:', featureState);
+            console.log('======================================');
+
+            const bodyLines = [
+              '## 🚀 Feature Development with GitHub Copilot',
+              '',
+              '**A feature branch will be created and GitHub Copilot coding agent will implement the feature.**',
+              '',
+              '**Work Item ID:** ' + workItemId,
+              '',
+              '## 📋 Feature Details',
+              '- **ID**: ' + workItemId,
+              '- **Title**: ' + featureTitle,
+              '- **Type**: ' + featureType,
+              '- **State**: ' + featureState,
+              '- **Description**: ' + featureDescription,
+              '',
+              '## 🎯 What Will Happen',
+              '1. A feature branch will be automatically created',
+              '2. A Pull Request will be created automatically',
+              '3. GitHub Copilot coding agent will be invoked with @copilot mention in the PR',
+              '4. Copilot will analyze the feature and generate:',
+              '   - Feature implementation code',
+              '   - Component structure',
+              '   - API endpoints (if backend)',
+              '   - Configuration files',
+              '   - Documentation',
+              '5. You can review and interact with Copilot in the PR',
+              '6. Once approved, merge the PR to integrate the feature',
+              '',
+              '## ✅ Success Criteria',
+              '- [ ] Feature branch created',
+              '- [ ] PR created with @copilot mention',
+              '- [ ] GitHub Copilot coding agent responds in PR',
+              '- [ ] Copilot implements feature completely',
+              '- [ ] Code follows project standards',
+              '- [ ] Unit tests included',
+              '- [ ] Documentation updated',
+              '- [ ] PR reviewed and approved',
+              '- [ ] PR merged successfully',
+              '',
+              '**Triggered automatically from Azure DevOps**'
+            ];
+
+            const issue = await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `🚀 Feature Development for WI #${workItemId}: ${featureTitle}`,
+              body: bodyLines.join('\n'),
+              labels: ['feature-development','copilot-agent','azure-devops-trigger']
+            });
+
+            console.log('Created tracking issue #', issue.data.number);
+            console.log('Issue URL:', issue.data.html_url);
+
+            core.setOutput('issue_number', issue.data.number);
+            return issue.data.number;
+
+      - name: Create Feature Branch and Initial Structure
+        id: create-files
+        run: |
+          WORK_ITEM_ID="${{ steps.extract.outputs.work_item_id }}"
+          FEATURE_TITLE="${{ steps.extract.outputs.feature_title }}"
+          TIMESTAMP=$(date +%s)
+          BRANCH_NAME="feature/WI-${WORK_ITEM_ID}-${TIMESTAMP}"
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          # Ensure we're on the default branch first
+          git fetch origin
+          git checkout master || git checkout main
+          git pull origin master || git pull origin main
+
+          # Create new branch from current HEAD
+          git checkout -b "$BRANCH_NAME"
+
+          mkdir -p features
+          mkdir -p src/features/WI-${WORK_ITEM_ID}
+
+          cat > "features/WI-${WORK_ITEM_ID}-feature.md" << 'EOF'
+          # Feature: ${FEATURE_TITLE}
+          
+          **Work Item ID:** ${WORK_ITEM_ID}
+          **Status:** In Development
+          **Created by:** GitHub Copilot
+          
+          ## Description
+          Feature implementation in progress
+          
+          ## Implementation Details
+          - [ ] Component implementation
+          - [ ] API endpoints (if applicable)
+          - [ ] Configuration
+          - [ ] Unit tests
+          - [ ] Documentation
+          EOF
+
+          cat > "src/features/WI-${WORK_ITEM_ID}/index.js" << 'EOF'
+          // Feature: ${FEATURE_TITLE}
+          // Work Item: ${WORK_ITEM_ID}
+          
+          // Implementation placeholder
+          // GitHub Copilot will generate the feature code here
+          
+          export default {
+            // Feature exports
+          };
+          EOF
+
+          cat > "src/features/WI-${WORK_ITEM_ID}/README.md" << 'EOF'
+          # ${FEATURE_TITLE}
+          
+          Feature implementation for Work Item #${WORK_ITEM_ID}
+          
+          ## Generated by GitHub Copilot
+          EOF
+
+          git add .
+          git commit -m "Initialize feature structure for Work Item #${WORK_ITEM_ID}: ${FEATURE_TITLE}"
+          git push origin "$BRANCH_NAME"
+
+          echo "branch_name=$BRANCH_NAME" >> $GITHUB_OUTPUT
+
+      - name: Create Pull Request and Invoke GitHub Copilot
+        id: create-pr
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const workItemId = '${{ steps.extract.outputs.work_item_id }}';
+            const featureTitle = '${{ steps.extract.outputs.feature_title }}';
+            const issueNumber = '${{ steps.create-issue.outputs.issue_number }}';
+            const branchName = '${{ steps.create-files.outputs.branch_name }}';
+
+            // Determine the base branch (master or main)
+            const repo = await github.rest.repos.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo
+            });
+            const baseBranch = repo.data.default_branch || 'master';
+
+            const prBody = `## 🚀 GitHub Copilot Feature Development Request
+
+            **Work Item:** #${workItemId}
+            **Feature:** ${featureTitle}
+            **Tracking Issue:** #${issueNumber}
+
+            Please implement this feature completely and update the placeholder files in this branch.
+            `;
+
+            const pr = await github.rest.pulls.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `🚀 Feature: ${featureTitle} (WI #${workItemId})`,
+              head: branchName,
+              base: baseBranch,
+              body: prBody,
+              draft: true
+            });
+
+            console.log('Draft PR created:', pr.data.number);
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issueNumber,
+              body: `Draft PR created: ${pr.data.html_url}`
+            });
+
+            core.setOutput('pr_number', pr.data.number);
+            core.setOutput('pr_url', pr.data.html_url);
+
+            return pr.data.number;
+
+      - name: Trigger Copilot AI Coding Agent
+        id: ai-agent
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const prNumber = ${{ steps.create-pr.outputs.pr_number }};
+            const workItemId = '${{ steps.extract.outputs.work_item_id }}';
+            const featureTitle = '${{ steps.extract.outputs.feature_title }}';
+            
+            // Add @copilot mention to trigger the AI agent
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: prNumber,
+              body: `@copilot I need you to implement the feature: ${featureTitle} (Work Item #${workItemId})
+
+              Please analyze the requirements and implement:
+
+              1. **Feature Implementation** - Complete, production-ready code
+              2. **Component Structure** - Well-organized code structure
+              3. **API Endpoints** - RESTful endpoints (if backend feature)
+              4. **Configuration Files** - Necessary config and environment setup
+              5. **Unit Tests** - Comprehensive test coverage (80%+ target)
+              6. **Documentation** - README and inline code documentation
+              7. **Error Handling** - Proper error handling and logging
+
+              Update the placeholder files with complete, production-ready implementation:
+              - features/WI-${workItemId}-feature.md
+              - src/features/WI-${workItemId}/index.js
+              - src/features/WI-${workItemId}/README.md
+              - Add tests in src/features/WI-${workItemId}/__tests__/
+
+              Ensure code follows project standards and best practices.`
+            });
+            
+            console.log('Copilot agent triggered for feature on PR #' + prNumber);
+            core.setOutput('ai_agent_triggered', true);
