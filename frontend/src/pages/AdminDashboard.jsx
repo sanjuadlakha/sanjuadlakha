@@ -7,7 +7,7 @@ import {
   DialogContent, DialogTitle, Divider, Grid, IconButton, InputAdornment,
   MenuItem, Paper, Select, Snackbar, Alert, Table, TableBody, TableCell,
   TableContainer, TableHead, TableRow, TextField, Tooltip, Typography,
-  Pagination, FormControl, InputLabel, Avatar,
+  Pagination, FormControl, InputLabel, Avatar, Card, CardContent,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
@@ -16,11 +16,59 @@ import SearchIcon from '@mui/icons-material/Search';
 import LogoutIcon from '@mui/icons-material/Logout';
 import PersonIcon from '@mui/icons-material/Person';
 import RefreshIcon from '@mui/icons-material/Refresh';
+import PeopleIcon from '@mui/icons-material/People';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import LayersIcon from '@mui/icons-material/Layers';
+import ManageAccountsIcon from '@mui/icons-material/ManageAccounts';
 
 const EMPTY_FORM = {
   username: '', email: '', password: '', role: 'user',
   first_name: '', last_name: '', is_active: 1,
 };
+
+function StatCard({ icon, label, value, gradient }) {
+  return (
+    <Card
+      elevation={2}
+      sx={{
+        borderRadius: 3,
+        overflow: 'hidden',
+        position: 'relative',
+      }}
+    >
+      <Box
+        sx={{
+          position: 'absolute',
+          top: 0, left: 0, right: 0,
+          height: 4,
+          background: gradient,
+        }}
+      />
+      <CardContent sx={{ pt: 3, pb: '20px !important' }}>
+        <Box display="flex" justifyContent="space-between" alignItems="flex-start">
+          <Box>
+            <Typography variant="h3" fontWeight={800} color="text.primary" lineHeight={1}>
+              {value}
+            </Typography>
+            <Typography variant="body2" color="text.secondary" mt={0.5} fontWeight={500}>
+              {label}
+            </Typography>
+          </Box>
+          <Box
+            sx={{
+              width: 48, height: 48, borderRadius: 2,
+              background: gradient,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              flexShrink: 0,
+            }}
+          >
+            {icon}
+          </Box>
+        </Box>
+      </CardContent>
+    </Card>
+  );
+}
 
 export default function AdminDashboard() {
   const { user, logout } = useAuth();
@@ -98,7 +146,7 @@ export default function AdminDashboard() {
         await usersApi.create(form);
         showSnack('User created successfully');
       } else {
-        const { password, username, ...updateData } = form;
+        const { password: _password, username: _username, ...updateData } = form;
         await usersApi.update(dialog.data.id, updateData);
         showSnack('User updated successfully');
       }
@@ -133,26 +181,47 @@ export default function AdminDashboard() {
   };
 
   return (
-    <Box sx={{ minHeight: '100vh', bgcolor: 'grey.50' }}>
+    <Box sx={{ minHeight: '100vh', bgcolor: 'background.default' }}>
       {/* Top Bar */}
-      <Paper elevation={2} square sx={{ px: 3, py: 1.5 }}>
+      <Paper
+        elevation={0}
+        square
+        sx={{
+          px: 3, py: 1.5,
+          borderBottom: '1px solid',
+          borderColor: 'divider',
+          background: 'linear-gradient(90deg, #4f46e5 0%, #7c3aed 100%)',
+        }}
+      >
         <Box display="flex" justifyContent="space-between" alignItems="center">
-          <Typography variant="h6" fontWeight={700} color="primary">
-            User Management
-          </Typography>
-          <Box display="flex" alignItems="center" gap={2}>
-            <Avatar sx={{ width: 32, height: 32, bgcolor: 'primary.main', fontSize: 14 }}>
+          <Box display="flex" alignItems="center" gap={1.5}>
+            <ManageAccountsIcon sx={{ color: 'white', fontSize: 28 }} />
+            <Typography variant="h6" fontWeight={700} color="white">
+              User Management
+            </Typography>
+          </Box>
+          <Box display="flex" alignItems="center" gap={1.5}>
+            <Avatar
+              sx={{
+                width: 34, height: 34,
+                background: 'rgba(255,255,255,0.25)',
+                fontSize: 14, fontWeight: 700,
+                border: '2px solid rgba(255,255,255,0.5)',
+              }}
+            >
               {user?.username?.[0]?.toUpperCase()}
             </Avatar>
-            <Typography variant="body2">{user?.username}</Typography>
+            <Typography variant="body2" color="white" fontWeight={500}>
+              {user?.username}
+            </Typography>
             <Tooltip title="My Profile">
-              <IconButton size="small" onClick={() => navigate('/profile')}>
-                <PersonIcon />
+              <IconButton size="small" onClick={() => navigate('/profile')} sx={{ color: 'rgba(255,255,255,0.85)' }}>
+                <PersonIcon fontSize="small" />
               </IconButton>
             </Tooltip>
             <Tooltip title="Logout">
-              <IconButton size="small" onClick={handleLogout} data-testid="logout-btn">
-                <LogoutIcon />
+              <IconButton size="small" onClick={handleLogout} data-testid="logout-btn" sx={{ color: 'rgba(255,255,255,0.85)' }}>
+                <LogoutIcon fontSize="small" />
               </IconButton>
             </Tooltip>
           </Box>
@@ -160,42 +229,42 @@ export default function AdminDashboard() {
       </Paper>
 
       <Container maxWidth="lg" sx={{ py: 4 }}>
-        {/* Stats */}
-        <Grid container spacing={2} mb={3}>
-          <Grid item xs={12} sm={4}>
-            <Paper sx={{ p: 2, textAlign: 'center' }}>
-              <Typography variant="h4" color="primary" fontWeight={700}>
-                {pagination.total}
-              </Typography>
-              <Typography variant="body2" color="text.secondary">Total Users</Typography>
-            </Paper>
+        {/* Stats Cards */}
+        <Grid container spacing={2.5} mb={4}>
+          <Grid size={{ xs: 12, sm: 4 }}>
+            <StatCard
+              icon={<PeopleIcon sx={{ color: 'white', fontSize: 24 }} />}
+              label="Total Users"
+              value={pagination.total}
+              gradient="linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)"
+            />
           </Grid>
-          <Grid item xs={12} sm={4}>
-            <Paper sx={{ p: 2, textAlign: 'center' }}>
-              <Typography variant="h4" color="success.main" fontWeight={700}>
-                {users.filter((u) => u.is_active).length}
-              </Typography>
-              <Typography variant="body2" color="text.secondary">Active (this page)</Typography>
-            </Paper>
+          <Grid size={{ xs: 12, sm: 4 }}>
+            <StatCard
+              icon={<CheckCircleIcon sx={{ color: 'white', fontSize: 24 }} />}
+              label="Active (this page)"
+              value={users.filter((u) => u.is_active).length}
+              gradient="linear-gradient(135deg, #10b981 0%, #059669 100%)"
+            />
           </Grid>
-          <Grid item xs={12} sm={4}>
-            <Paper sx={{ p: 2, textAlign: 'center' }}>
-              <Typography variant="h4" color="warning.main" fontWeight={700}>
-                {pagination.totalPages}
-              </Typography>
-              <Typography variant="body2" color="text.secondary">Pages</Typography>
-            </Paper>
+          <Grid size={{ xs: 12, sm: 4 }}>
+            <StatCard
+              icon={<LayersIcon sx={{ color: 'white', fontSize: 24 }} />}
+              label="Total Pages"
+              value={pagination.totalPages}
+              gradient="linear-gradient(135deg, #f59e0b 0%, #d97706 100%)"
+            />
           </Grid>
         </Grid>
 
         {/* Toolbar */}
-        <Paper sx={{ p: 2, mb: 2 }}>
+        <Paper elevation={1} sx={{ p: 2, mb: 2, borderRadius: 3 }}>
           <Box display="flex" gap={2} flexWrap="wrap" alignItems="center">
             <TextField
               size="small" placeholder="Search users…" value={search}
               onChange={(e) => { setSearch(e.target.value); setPage(1); }}
               InputProps={{
-                startAdornment: <InputAdornment position="start"><SearchIcon /></InputAdornment>,
+                startAdornment: <InputAdornment position="start"><SearchIcon sx={{ color: 'text.secondary' }} /></InputAdornment>,
               }}
               sx={{ width: 260 }}
               inputProps={{ 'data-testid': 'search-input' }}
@@ -226,18 +295,30 @@ export default function AdminDashboard() {
         </Paper>
 
         {/* Table */}
-        <TableContainer component={Paper}>
+        <TableContainer component={Paper} elevation={1} sx={{ borderRadius: 3, overflow: 'hidden' }}>
           {loading ? (
-            <Box display="flex" justifyContent="center" py={4}>
+            <Box display="flex" justifyContent="center" py={6}>
               <CircularProgress />
             </Box>
           ) : (
             <Table>
-              <TableHead sx={{ bgcolor: 'primary.main' }}>
-                <TableRow>
+              <TableHead>
+                <TableRow sx={{ bgcolor: '#f8faff' }}>
                   {['ID', 'Name', 'Username', 'Email', 'Role', 'Status', 'Joined', 'Actions'].map(
                     (h) => (
-                      <TableCell key={h} sx={{ color: 'white', fontWeight: 600 }}>
+                      <TableCell
+                        key={h}
+                        sx={{
+                          fontWeight: 700,
+                          color: 'text.secondary',
+                          fontSize: '0.75rem',
+                          textTransform: 'uppercase',
+                          letterSpacing: '0.05em',
+                          borderBottom: '2px solid',
+                          borderColor: 'divider',
+                          py: 1.5,
+                        }}
+                      >
                         {h}
                       </TableCell>
                     )
@@ -247,23 +328,31 @@ export default function AdminDashboard() {
               <TableBody>
                 {users.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={8} align="center" sx={{ py: 4 }}>
-                      No users found
+                    <TableCell colSpan={8} align="center" sx={{ py: 6 }}>
+                      <Typography color="text.secondary">No users found</Typography>
                     </TableCell>
                   </TableRow>
                 ) : (
                   users.map((u) => (
-                    <TableRow key={u.id} hover>
-                      <TableCell>{u.id}</TableCell>
-                      <TableCell>
+                    <TableRow
+                      key={u.id}
+                      hover
+                      sx={{
+                        '&:last-child td': { border: 0 },
+                        transition: 'background-color 0.15s',
+                      }}
+                    >
+                      <TableCell sx={{ color: 'text.secondary', fontWeight: 500 }}>{u.id}</TableCell>
+                      <TableCell fontWeight={500}>
                         {u.first_name} {u.last_name}
                       </TableCell>
-                      <TableCell>{u.username}</TableCell>
-                      <TableCell>{u.email}</TableCell>
+                      <TableCell sx={{ fontWeight: 500 }}>{u.username}</TableCell>
+                      <TableCell sx={{ color: 'text.secondary' }}>{u.email}</TableCell>
                       <TableCell>
                         <Chip
                           label={u.role} size="small"
                           color={u.role === 'admin' ? 'secondary' : 'default'}
+                          sx={{ fontWeight: 600, fontSize: '0.7rem' }}
                         />
                       </TableCell>
                       <TableCell>
@@ -271,9 +360,11 @@ export default function AdminDashboard() {
                           label={u.is_active ? 'Active' : 'Inactive'}
                           size="small"
                           color={u.is_active ? 'success' : 'error'}
+                          variant={u.is_active ? 'filled' : 'outlined'}
+                          sx={{ fontWeight: 600, fontSize: '0.7rem' }}
                         />
                       </TableCell>
-                      <TableCell>
+                      <TableCell sx={{ color: 'text.secondary', fontSize: '0.85rem' }}>
                         {new Date(u.created_at).toLocaleDateString()}
                       </TableCell>
                       <TableCell>
@@ -281,6 +372,7 @@ export default function AdminDashboard() {
                           <IconButton
                             size="small" onClick={() => openEdit(u)}
                             data-testid={`edit-user-${u.id}`}
+                            sx={{ color: 'primary.main' }}
                           >
                             <EditIcon fontSize="small" />
                           </IconButton>
@@ -307,18 +399,19 @@ export default function AdminDashboard() {
 
         {/* Pagination */}
         {pagination.totalPages > 1 && (
-          <Box display="flex" justifyContent="center" mt={2}>
+          <Box display="flex" justifyContent="center" mt={3}>
             <Pagination
               count={pagination.totalPages} page={page}
               onChange={(_, p) => setPage(p)} color="primary"
+              shape="rounded"
             />
           </Box>
         )}
       </Container>
 
       {/* Create / Edit Dialog */}
-      <Dialog open={dialog.open} onClose={closeDialog} maxWidth="sm" fullWidth>
-        <DialogTitle fontWeight={700}>
+      <Dialog open={dialog.open} onClose={closeDialog} maxWidth="sm" fullWidth PaperProps={{ sx: { borderRadius: 3 } }}>
+        <DialogTitle fontWeight={700} sx={{ pb: 1 }}>
           {dialog.mode === 'create' ? 'Create New User' : `Edit User: ${dialog.data?.username}`}
         </DialogTitle>
         <Divider />
@@ -327,14 +420,14 @@ export default function AdminDashboard() {
             <Alert severity="error" sx={{ mb: 2 }}>{formError}</Alert>
           )}
           <Grid container spacing={2} mt={0}>
-            <Grid item xs={6}>
+            <Grid size={{ xs: 6 }}>
               <TextField
                 fullWidth label="First Name" name="first_name"
                 value={form.first_name} onChange={handleFormChange}
                 inputProps={{ 'data-testid': 'dialog-firstname' }}
               />
             </Grid>
-            <Grid item xs={6}>
+            <Grid size={{ xs: 6 }}>
               <TextField
                 fullWidth label="Last Name" name="last_name"
                 value={form.last_name} onChange={handleFormChange}
@@ -342,7 +435,7 @@ export default function AdminDashboard() {
               />
             </Grid>
             {dialog.mode === 'create' && (
-              <Grid item xs={12}>
+              <Grid size={{ xs: 12 }}>
                 <TextField
                   fullWidth required label="Username" name="username"
                   value={form.username} onChange={handleFormChange}
@@ -350,7 +443,7 @@ export default function AdminDashboard() {
                 />
               </Grid>
             )}
-            <Grid item xs={12}>
+            <Grid size={{ xs: 12 }}>
               <TextField
                 fullWidth required label="Email" name="email" type="email"
                 value={form.email} onChange={handleFormChange}
@@ -358,7 +451,7 @@ export default function AdminDashboard() {
               />
             </Grid>
             {dialog.mode === 'create' && (
-              <Grid item xs={12}>
+              <Grid size={{ xs: 12 }}>
                 <TextField
                   fullWidth required label="Password" name="password" type="password"
                   value={form.password} onChange={handleFormChange}
@@ -366,7 +459,7 @@ export default function AdminDashboard() {
                 />
               </Grid>
             )}
-            <Grid item xs={6}>
+            <Grid size={{ xs: 6 }}>
               <FormControl fullWidth>
                 <InputLabel>Role</InputLabel>
                 <Select
@@ -380,7 +473,7 @@ export default function AdminDashboard() {
               </FormControl>
             </Grid>
             {dialog.mode === 'edit' && (
-              <Grid item xs={6}>
+              <Grid size={{ xs: 6 }}>
                 <FormControl fullWidth>
                   <InputLabel>Status</InputLabel>
                   <Select
@@ -396,13 +489,13 @@ export default function AdminDashboard() {
             )}
           </Grid>
         </DialogContent>
-        <DialogActions sx={{ p: 2 }}>
-          <Button onClick={closeDialog}>Cancel</Button>
+        <DialogActions sx={{ p: 2, gap: 1 }}>
+          <Button onClick={closeDialog} variant="outlined" color="inherit">Cancel</Button>
           <Button
             variant="contained" onClick={handleSave} disabled={saving}
             data-testid="dialog-save-btn"
           >
-            {saving ? <CircularProgress size={20} /> : 'Save'}
+            {saving ? <CircularProgress size={20} /> : 'Save Changes'}
           </Button>
         </DialogActions>
       </Dialog>
@@ -420,3 +513,4 @@ export default function AdminDashboard() {
     </Box>
   );
 }
+
