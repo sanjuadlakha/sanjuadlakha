@@ -71,20 +71,26 @@ jobs:
             core.setOutput('issue_number', issue.data.number);
             console.log('Created issue #', issue.data.number);
 
-            // Assign Copilot as assignee
-            try {
-              const assignResult = await github.rest.issues.addAssignees({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: issue.data.number,
-                assignees: ['copilot[bot]']
-              });
-              console.log('✅ Assigned copilot[bot] to issue #' + issue.data.number);
-              console.log('Assignees:', assignResult.data.assignees.map(a => a.login));
-            } catch (error) {
-              console.error('❌ Assignment failed:', error.message);
-              console.error('Status:', error.status);
-              throw error;
+            // Assign Copilot as assignee - try different bot name patterns
+            const botNames = ['copilot[bot]', 'copilot', 'github-copilot', 'github[bot]'];
+            let assigned = false;
+            for (const botName of botNames) {
+              try {
+                await github.rest.issues.addAssignees({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: issue.data.number,
+                  assignees: [botName]
+                });
+                console.log(`✅ Assigned ${botName} to issue #${issue.data.number}`);
+                assigned = true;
+                break;
+              } catch (error) {
+                console.log(`⚠️  Failed with ${botName}: ${error.message}`);
+              }
+            }
+            if (!assigned) {
+              console.log('⚠️  Could not auto-assign Copilot - manual assignment may be needed');
             }
 
       - name: Create Feature Branch
@@ -159,20 +165,17 @@ jobs:
             core.setOutput('pr_number', pr.data.number);
             console.log('PR created:', pr.data.number);
 
-            // Assign Copilot to PR
+            // Request Copilot as reviewer on PR
             try {
-              const assignResult = await github.rest.issues.addAssignees({
+              await github.rest.pulls.requestReviewers({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
-                issue_number: pr.data.number,
-                assignees: ['copilot[bot]']
+                pull_number: pr.data.number,
+                reviewers: ['copilot[bot]']
               });
-              console.log('✅ Assigned copilot[bot] to PR #' + pr.data.number);
-              console.log('Assignees:', assignResult.data.assignees.map(a => a.login));
+              console.log('✅ Requested copilot[bot] as reviewer on PR #' + pr.data.number);
             } catch (error) {
-              console.error('❌ Assignment failed:', error.message);
-              console.error('Status:', error.status);
-              throw error;
+              console.log('⚠️  Could not request copilot[bot] as reviewer:', error.message);
             }
 
       - name: Trigger Copilot
