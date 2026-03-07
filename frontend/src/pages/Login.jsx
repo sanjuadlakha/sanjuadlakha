@@ -1,17 +1,21 @@
 import { useState } from 'react';
 import { useNavigate, Link as RouterLink } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useThemeMode } from '../context/ThemeContext';
 import {
   Avatar, Box, Button, Container, Grid, Link, Paper,
-  TextField, Typography, Alert, CircularProgress, InputAdornment, IconButton,
+  TextField, Typography, Alert, CircularProgress, InputAdornment, IconButton, Tooltip,
 } from '@mui/material';
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 import Visibility from '@mui/icons-material/Visibility';
 import VisibilityOff from '@mui/icons-material/VisibilityOff';
+import Brightness4Icon from '@mui/icons-material/Brightness4';
+import Brightness7Icon from '@mui/icons-material/Brightness7';
 
 export default function Login() {
   const { login } = useAuth();
   const navigate = useNavigate();
+  const { mode, toggleMode } = useThemeMode();
 
   const [form, setForm] = useState({ email: '', password: '' });
   const [error, setError] = useState('');
@@ -45,6 +49,13 @@ export default function Login() {
           justifyContent: 'center',
         }}
       >
+        <Box sx={{ position: 'fixed', top: 16, right: 16 }}>
+          <Tooltip title={mode === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}>
+            <IconButton onClick={toggleMode} data-testid="theme-toggle-btn">
+              {mode === 'dark' ? <Brightness7Icon /> : <Brightness4Icon />}
+            </IconButton>
+          </Tooltip>
+        </Box>
         <Paper elevation={6} sx={{ p: 4, width: '100%', borderRadius: 3 }}>
           <Box display="flex" flexDirection="column" alignItems="center" mb={2}>
             <Avatar sx={{ m: 1, bgcolor: 'primary.main' }}>
