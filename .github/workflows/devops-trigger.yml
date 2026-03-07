@@ -176,6 +176,20 @@ jobs:
             console.log('Issue URL:', issue.data.html_url);
 
             core.setOutput('issue_number', issue.data.number);
+            
+            // Assign Copilot as assignee
+            try {
+              await github.rest.issues.addAssignees({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.data.number,
+                assignees: ['copilot']
+              });
+              console.log('Assigned Copilot to issue #', issue.data.number);
+            } catch (error) {
+              console.log('Note: Could not auto-assign Copilot, may need manual assignment');
+            }
+            
             return issue.data.number;
 
       - name: Create Branch and Initial Test Structure
@@ -272,6 +286,19 @@ jobs:
 
             core.setOutput('pr_number', pr.data.number);
             core.setOutput('pr_url', pr.data.html_url);
+
+            // Assign Copilot to PR
+            try {
+              await github.rest.issues.addAssignees({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: pr.data.number,
+                assignees: ['copilot']
+              });
+              console.log('Assigned Copilot to PR #', pr.data.number);
+            } catch (error) {
+              console.log('Note: Could not auto-assign Copilot, may need manual assignment');
+            }
 
             return pr.data.number;
 
