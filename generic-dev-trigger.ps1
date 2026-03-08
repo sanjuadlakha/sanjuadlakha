@@ -4,10 +4,10 @@
 param(
   # Basic Parameters
   [Parameter(Mandatory=$false)]
-  [string]$Owner = "sanjuadlakha",
+  [string]$Owner = "Sanju-Organization",
 
   [Parameter(Mandatory=$false)]
-  [string]$Repo = "sanjuadlakha",
+  [string]$Repo = "user-management",
 
   [Parameter(Mandatory=$false)]
   [int]$WorkItemId = $null,
