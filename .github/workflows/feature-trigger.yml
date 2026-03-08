@@ -57,28 +57,28 @@ jobs:
           script: |
             const workItemId = '${{ steps.extract.outputs.work_item_id }}';
             const projectTitle = '${{ steps.extract.outputs.project_title }}';
-            const projectDescription = '${{ steps.extract.outputs.project_description }}';
+            const projectDescription = `${{ steps.extract.outputs.project_description }}`.replace(/\r\n/g, '\n');
             const projectType = '${{ steps.extract.outputs.project_type }}';
             const techStack = '${{ steps.extract.outputs.tech_stack }}';
             const customInstructions = '${{ steps.extract.outputs.custom_instructions }}';
 
-            // Determine emoji based on project type
-            const typeEmojis = {
-              'Feature': '🚀',
-              'Bug Fix': '🐛', 
-              'Enhancement': '✨',
-              'Scratch Development': '🏗️',
-              'Full Project': '🌟',
-              'Refactor': '♻️',
-              'Documentation': '📚',
-              'Test': '🧪',
-              'API': '🔌',
-              'UI/UX': '🎨',
-              'Database': '💾'
+            // Determine emoji based on project type - use ASCII to avoid GitHub Actions issues
+            const typeIcons = {
+              'Feature': '[FEATURE]',
+              'Bug Fix': '[BUG]', 
+              'Enhancement': '[ENH]',
+              'Scratch Development': '[NEW]',
+              'Full Project': '[PROJECT]',
+              'Refactor': '[REF]',
+              'Documentation': '[DOC]',
+              'Test': '[TEST]',
+              'API': '[API]',
+              'UI/UX': '[UI]',
+              'Database': '[DB]'
             };
-            const emoji = typeEmojis[projectType] || '💻';
+            const icon = typeIcons[projectType] || '[DEV]';
 
-            let issueBody = `## ${emoji} ${projectType} Development Request
+            let issueBody = `## ${icon} ${projectType} Development Request
                         
             **Work Item:** ${workItemId}
             **Title:** ${projectTitle}
@@ -119,7 +119,7 @@ jobs:
             const issue = await github.rest.issues.create({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              title: `${emoji} ${projectTitle} (${projectType} - WI #${workItemId})`,
+              title: `${icon} ${projectTitle} (${projectType} - WI #${workItemId})`,
               body: issueBody,
               labels: [projectType.toLowerCase().replace(/\s+/g, '-'), 'copilot-agent']
             });
@@ -155,10 +155,10 @@ jobs:
                   model: ''
                 }
               });
-              console.log('✅ Assigned copilot-swe-agent[bot] to issue #' + issue.data.number);
-              console.log('🚀 Copilot coding agent will now start working!');
+              console.log('[SUCCESS] Assigned copilot-swe-agent[bot] to issue #' + issue.data.number);
+              console.log('[COPILOT] Coding agent will now start working!');
             } catch (error) {
-              console.error('❌ Failed to assign Copilot coding agent:', error.message);
+              console.error('[ERROR] Failed to assign Copilot coding agent:', error.message);
               console.log('Status:', error.status);
               // Don't throw - continue with workflow
             }
@@ -173,13 +173,13 @@ jobs:
             const projectType = '${{ steps.extract.outputs.project_type }}';
             
             console.log('========================================');
-            console.log('🎉 GENERIC WORKFLOW COMPLETE');
+            console.log('[SUCCESS] GENERIC WORKFLOW COMPLETE');
             console.log('========================================');
             console.log(`Issue #${issueNumber}: ${projectTitle}`);
             console.log(`Type: ${projectType}`);
             console.log(`Work Item: ${workItemId}`);
             console.log('');
-            console.log('🤖 Copilot coding agent assigned!');
+            console.log('[COPILOT] Coding agent assigned!');
             console.log('   - Will analyze requirements');
             console.log('   - Will create appropriate structure');
             console.log('   - Will implement with best practices');
