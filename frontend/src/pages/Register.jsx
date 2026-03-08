@@ -2,12 +2,13 @@ import { useState } from 'react';
 import { useNavigate, Link as RouterLink } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import {
-  Avatar, Box, Button, Container, Grid, Link, Paper,
+  Avatar, Box, Button, Grid, Link, Paper,
   TextField, Typography, Alert, CircularProgress, InputAdornment, IconButton,
 } from '@mui/material';
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
 import Visibility from '@mui/icons-material/Visibility';
 import VisibilityOff from '@mui/icons-material/VisibilityOff';
+import ManageAccountsIcon from '@mui/icons-material/ManageAccounts';
 
 export default function Register() {
   const { register } = useAuth();
@@ -42,23 +43,85 @@ export default function Register() {
   };
 
   return (
-    <Container component="main" maxWidth="xs">
-      <Box
+    <Grid container sx={{ minHeight: '100vh' }}>
+      {/* Left branding panel */}
+      <Grid
+        size={{ xs: false, md: 5 }}
         sx={{
-          minHeight: '100vh',
-          display: 'flex',
+          background: 'linear-gradient(160deg, #7c3aed 0%, #4f46e5 50%, #0ea5e9 100%)',
+          display: { xs: 'none', md: 'flex' },
           flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'center',
+          p: 6,
+          position: 'relative',
+          overflow: 'hidden',
+          '&::before': {
+            content: '""',
+            position: 'absolute',
+            width: 320,
+            height: 320,
+            borderRadius: '50%',
+            background: 'rgba(255,255,255,0.07)',
+            top: -80,
+            right: -80,
+          },
+          '&::after': {
+            content: '""',
+            position: 'absolute',
+            width: 200,
+            height: 200,
+            borderRadius: '50%',
+            background: 'rgba(255,255,255,0.05)',
+            bottom: -60,
+            left: -60,
+          },
         }}
       >
-        <Paper elevation={6} sx={{ p: 4, width: '100%', borderRadius: 3 }}>
-          <Box display="flex" flexDirection="column" alignItems="center" mb={2}>
-            <Avatar sx={{ m: 1, bgcolor: 'secondary.main' }}>
+        <ManageAccountsIcon sx={{ fontSize: 72, color: 'rgba(255,255,255,0.95)', mb: 3 }} />
+        <Typography variant="h4" color="white" fontWeight={800} textAlign="center" gutterBottom>
+          Join Us Today
+        </Typography>
+        <Typography variant="body1" sx={{ color: 'rgba(255,255,255,0.75)', textAlign: 'center', maxWidth: 320 }}>
+          Create your account and start managing users with full role-based access control.
+        </Typography>
+      </Grid>
+
+      {/* Right form panel */}
+      <Grid
+        size={{ xs: 12, md: 7 }}
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          bgcolor: 'background.default',
+          p: { xs: 3, sm: 6 },
+        }}
+      >
+        <Paper
+          elevation={3}
+          sx={{
+            p: { xs: 3, sm: 5 },
+            width: '100%',
+            maxWidth: 480,
+            borderRadius: 3,
+          }}
+        >
+          <Box display="flex" flexDirection="column" alignItems="center" mb={3}>
+            <Avatar
+              sx={{
+                m: 1, mb: 2,
+                width: 52, height: 52,
+                background: 'linear-gradient(135deg, #7c3aed 0%, #4f46e5 100%)',
+              }}
+            >
               <PersonAddIcon />
             </Avatar>
-            <Typography component="h1" variant="h5" fontWeight={700}>
-              Create Account
+            <Typography component="h1" variant="h5" fontWeight={800} color="text.primary">
+              Create an account
+            </Typography>
+            <Typography variant="body2" color="text.secondary" mt={0.5}>
+              Fill in your details to get started
             </Typography>
           </Box>
 
@@ -70,35 +133,35 @@ export default function Register() {
 
           <Box component="form" onSubmit={handleSubmit}>
             <Grid container spacing={2}>
-              <Grid item xs={6}>
+              <Grid size={{ xs: 6 }}>
                 <TextField
                   fullWidth required label="First Name" name="first_name"
                   value={form.first_name} onChange={handleChange}
                   inputProps={{ 'data-testid': 'reg-firstname' }}
                 />
               </Grid>
-              <Grid item xs={6}>
+              <Grid size={{ xs: 6 }}>
                 <TextField
                   fullWidth label="Last Name" name="last_name"
                   value={form.last_name} onChange={handleChange}
                   inputProps={{ 'data-testid': 'reg-lastname' }}
                 />
               </Grid>
-              <Grid item xs={12}>
+              <Grid size={{ xs: 12 }}>
                 <TextField
                   fullWidth required label="Username" name="username"
                   value={form.username} onChange={handleChange}
                   inputProps={{ 'data-testid': 'reg-username' }}
                 />
               </Grid>
-              <Grid item xs={12}>
+              <Grid size={{ xs: 12 }}>
                 <TextField
                   fullWidth required label="Email Address" name="email" type="email"
                   value={form.email} onChange={handleChange}
                   inputProps={{ 'data-testid': 'reg-email' }}
                 />
               </Grid>
-              <Grid item xs={12}>
+              <Grid size={{ xs: 12 }}>
                 <TextField
                   fullWidth required label="Password" name="password"
                   type={showPass ? 'text' : 'password'}
@@ -118,24 +181,25 @@ export default function Register() {
             </Grid>
 
             <Button
-              type="submit" fullWidth variant="contained"
-              sx={{ mt: 3, mb: 2, py: 1.5 }}
+              type="submit" fullWidth variant="contained" size="large"
+              sx={{ mt: 3, mb: 2, py: 1.5, fontSize: '1rem' }}
               disabled={loading}
               data-testid="reg-submit"
             >
-              {loading ? <CircularProgress size={24} color="inherit" /> : 'Register'}
+              {loading ? <CircularProgress size={24} color="inherit" /> : 'Create Account'}
             </Button>
 
-            <Grid container justifyContent="flex-end">
-              <Grid item>
-                <Link component={RouterLink} to="/login" variant="body2">
-                  Already have an account? Sign In
+            <Box textAlign="center">
+              <Typography variant="body2" color="text.secondary">
+                Already have an account?{' '}
+                <Link component={RouterLink} to="/login" fontWeight={600}>
+                  Sign in
                 </Link>
-              </Grid>
-            </Grid>
+              </Typography>
+            </Box>
           </Box>
         </Paper>
-      </Box>
-    </Container>
+      </Grid>
+    </Grid>
   );
 }
