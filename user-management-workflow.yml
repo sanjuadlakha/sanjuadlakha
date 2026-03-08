@@ -1,0 +1,122 @@
+name: Feature Development - Copilot Agent
+
+on:
+  repository_dispatch:
+    types: 
+      - azure-devops-feature
+      - feature-trigger
+  workflow_dispatch:
+
+jobs:
+  trigger-copilot:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Extract Feature Details
+        id: extract
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const payload = context.payload.client_payload || {};
+            
+            const defaults = {
+              workItemId: 1,
+              featureTitle: 'User Management Web Application',
+              featureDescription: 'Build full-stack user management app'
+            };
+
+            const workItemId = payload.workItemId || defaults.workItemId;
+            const featureTitle = payload.title || defaults.featureTitle;
+            const featureDescription = payload.description || defaults.featureDescription;
+
+            console.log('Work Item ID:', workItemId);
+            console.log('Feature Title:', featureTitle);
+
+            core.setOutput('work_item_id', workItemId);
+            core.setOutput('feature_title', featureTitle);
+            core.setOutput('feature_description', featureDescription);
+
+      - name: Create GitHub Issue and Assign Copilot
+        id: create-issue
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.COPILOT_PAT || secrets.GITHUB_TOKEN }}
+          script: |
+            const workItemId = '${{ steps.extract.outputs.work_item_id }}';
+            const featureTitle = '${{ steps.extract.outputs.feature_title }}';
+            const featureDescription = `${{ steps.extract.outputs.feature_description }}`;
+
+            const issue = await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `🚀 ${featureTitle} (WI #${workItemId})`,
+              body: `## 🚀 Feature Implementation Request
+                        
+            **Work Item:** #${workItemId}
+            **Title:** ${featureTitle}
+
+            ---
+
+            ${featureDescription}
+
+            ---
+
+            ### Copilot Agent Instructions:
+            1. Analyze the requirements above
+            2. Create the complete project structure
+            3. Implement all features with production-quality code
+            4. Include comprehensive tests
+            5. Add documentation and setup instructions
+            
+            **Note:** Copilot coding agent will automatically create a branch and PR with the implementation.`,
+              labels: ['feature', 'copilot-agent', 'user-management']
+            });
+
+            core.setOutput('issue_number', issue.data.number);
+            console.log('Created issue #', issue.data.number);
+
+            // Assign Copilot coding agent
+            try {
+              await github.request('POST /repos/{owner}/{repo}/issues/{issue_number}/assignees', {
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.data.number,
+                assignees: ['copilot-swe-agent[bot]'],
+                agent_assignment: {
+                  target_repo: `${context.repo.owner}/${context.repo.repo}`,
+                  base_branch: 'main',
+                  custom_instructions: featureDescription,
+                  custom_agent: '',
+                  model: ''
+                }
+              });
+              console.log('✅ Assigned copilot-swe-agent[bot] to issue #' + issue.data.number);
+              console.log('🚀 Copilot coding agent will now start working!');
+            } catch (error) {
+              console.error('❌ Failed to assign Copilot:', error.message);
+              console.log('Status:', error.status);
+              console.log('You may need to manually assign Copilot from the issue page');
+            }
+
+      - name: Summary
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const issueNumber = '${{ steps.create-issue.outputs.issue_number }}';
+            const featureTitle = '${{ steps.extract.outputs.feature_title }}';
+            
+            console.log('========================================');
+            console.log('🎉 WORKFLOW COMPLETE');
+            console.log('========================================');
+            console.log(`Issue #${issueNumber}: ${featureTitle}`);
+            console.log('');
+            console.log('🤖 Copilot coding agent assigned!');
+            console.log('   - Will create branch: copilot/...');
+            console.log('   - Will implement the feature');
+            console.log('   - Will create a PR');
+            console.log('   - Will request your review');
+            console.log('');
+            console.log(`View: https://github.com/${context.repo.owner}/${context.repo.repo}/issues/${issueNumber}`);
+            console.log('========================================');
