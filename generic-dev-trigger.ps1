@@ -54,21 +54,21 @@ if (-not $token) {
   exit 1
 }
 
-# Determine emoji based on project type
-$typeEmojis = @{
-  'Feature' = '🚀'
-  'Bug Fix' = '🐛'
-  'Enhancement' = '✨'
-  'Scratch Development' = '🏗️'
-  'Full Project' = '🌟'
-  'Refactor' = '♻️'
-  'Documentation' = '📚'
-  'Test' = '🧪'
-  'API' = '🔌'
-  'UI/UX' = '🎨'
-  'Database' = '💾'
+# Determine icon based on project type
+$typeIcons = @{
+  'Feature' = '[FEAT]'
+  'Bug Fix' = '[BUG]'
+  'Enhancement' = '[ENH]'
+  'Scratch Development' = '[NEW]'
+  'Full Project' = '[PROJ]'
+  'Refactor' = '[REF]'
+  'Documentation' = '[DOC]'
+  'Test' = '[TEST]'
+  'API' = '[API]'
+  'UI/UX' = '[UI]'
+  'Database' = '[DB]'
 }
-$emoji = $typeEmojis[$ProjectType]
+$icon = $typeIcons[$ProjectType]
 
 Write-Host ""
 Write-Host "=========================================" -ForegroundColor Cyan
@@ -77,7 +77,7 @@ Write-Host "=========================================" -ForegroundColor Cyan
 Write-Host ""
 Write-Host "Repository:     $Owner/$Repo" -ForegroundColor White
 Write-Host "Work Item ID:   WI-$WorkItemId" -ForegroundColor Yellow
-Write-Host "Project Type:   $emoji $ProjectType" -ForegroundColor Yellow
+Write-Host "Project Type:   $icon $ProjectType" -ForegroundColor Yellow
 Write-Host "Title:          $ProjectTitle" -ForegroundColor Yellow
 
 if ($TechStack) {
@@ -136,7 +136,7 @@ try {
     -ContentType "application/json" `
     -ErrorAction Stop
 
-  Write-Host "✅ SUCCESS! Workflow triggered successfully!" -ForegroundColor Green
+  Write-Host "[SUCCESS] Workflow triggered successfully!" -ForegroundColor Green
   Write-Host ""
   Write-Host "=========================================" -ForegroundColor Cyan
   Write-Host "  Next Steps" -ForegroundColor Cyan
@@ -163,7 +163,7 @@ try {
   Write-Host ""
 }
 catch {
-  Write-Host "❌ FAILED to trigger workflow" -ForegroundColor Red
+  Write-Host "[FAILED] Could not trigger workflow" -ForegroundColor Red
   Write-Host ""
   Write-Host "Error: $($_.Exception.Message)" -ForegroundColor Red
   Write-Host ""
