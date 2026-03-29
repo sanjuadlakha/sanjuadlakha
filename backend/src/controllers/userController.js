@@ -283,6 +283,47 @@ function restoreUser(req, res, next) {
   }
 }
 
+// GET /api/users/stats — Admin: summary counts
+function getUserStats(req, res, next) {
+  try {
+    const db = getDb();
+
+    const totalStmt = db.prepare(
+      'SELECT COUNT(*) as total FROM users WHERE is_deleted = 0'
+    );
+    const totalResult = totalStmt.getAsObject([]);
+    totalStmt.free();
+
+    const adminStmt = db.prepare(
+      'SELECT COUNT(*) as count FROM users WHERE is_deleted = 0 AND role = ?'
+    );
+    const adminResult = adminStmt.getAsObject(['admin']);
+    adminStmt.free();
+
+    const activeStmt = db.prepare(
+      'SELECT COUNT(*) as count FROM users WHERE is_deleted = 0 AND is_active = 1'
+    );
+    const activeResult = activeStmt.getAsObject([]);
+    activeStmt.free();
+
+    const total = totalResult.total || 0;
+    const admins = adminResult.count || 0;
+    const active = activeResult.count || 0;
+
+    res.json({
+      stats: {
+        total,
+        active,
+        inactive: total - active,
+        admins,
+        users: total - admins,
+      },
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
 module.exports = {
   getUsers,
   getUserById,
@@ -291,4 +332,5 @@ module.exports = {
   changePassword,
   deleteUser,
   restoreUser,
+  getUserStats,
 };

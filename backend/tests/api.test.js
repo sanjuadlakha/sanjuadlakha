@@ -63,7 +63,13 @@ jest.mock('../src/config/database', () => {
 
             // COUNT admins
             if (s.includes('COUNT(*)') && s.includes('ROLE = ?')) {
-              const count = users.filter((u) => u.role === params[0]).length;
+              const count = users.filter((u) => u.role === params[0] && u.is_deleted === 0).length;
+              return { count };
+            }
+
+            // COUNT active users
+            if (s.includes('COUNT(*)') && s.includes('IS_ACTIVE = 1')) {
+              const count = users.filter((u) => u.is_deleted === 0 && u.is_active === 1).length;
               return { count };
             }
 
@@ -283,6 +289,54 @@ describe('Users - Admin CRUD', () => {
       .get('/api/users/9999')
       .set('Authorization', `Bearer ${adminToken}`);
     expect(res.status).toBe(404);
+  });
+});
+
+describe('Users - Stats', () => {
+  let adminToken;
+  let userToken;
+
+  beforeAll(async () => {
+    const res = await request(app)
+      .post('/api/auth/login')
+      .send({ email: 'admin@example.com', password: 'Admin@123' });
+    adminToken = res.body.token;
+
+    const jwt = require('jsonwebtoken');
+    userToken = jwt.sign(
+      { id: 99, username: 'regular', email: 'user@test.com', role: 'user' },
+      'test-secret',
+      { expiresIn: '1h' }
+    );
+  });
+
+  test('GET /api/users/stats returns stats for admin', async () => {
+    const res = await request(app)
+      .get('/api/users/stats')
+      .set('Authorization', `Bearer ${adminToken}`);
+    expect(res.status).toBe(200);
+    expect(res.body).toHaveProperty('stats');
+    expect(res.body.stats).toHaveProperty('total');
+    expect(res.body.stats).toHaveProperty('active');
+    expect(res.body.stats).toHaveProperty('inactive');
+    expect(res.body.stats).toHaveProperty('admins');
+    expect(res.body.stats).toHaveProperty('users');
+    expect(res.body.stats.total).toBeGreaterThanOrEqual(1);
+    expect(res.body.stats.admins).toBeGreaterThanOrEqual(1);
+    expect(res.body.stats.total).toBe(res.body.stats.active + res.body.stats.inactive);
+    expect(res.body.stats.total).toBe(res.body.stats.admins + res.body.stats.users);
+  });
+
+  test('GET /api/users/stats returns 403 for regular user', async () => {
+    const res = await request(app)
+      .get('/api/users/stats')
+      .set('Authorization', `Bearer ${userToken}`);
+    expect(res.status).toBe(403);
+  });
+
+  test('GET /api/users/stats returns 401 without token', async () => {
+    const res = await request(app).get('/api/users/stats');
+    expect(res.status).toBe(401);
   });
 });
 

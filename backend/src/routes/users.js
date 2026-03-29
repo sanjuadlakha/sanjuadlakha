@@ -9,6 +9,7 @@ const {
   changePassword,
   deleteUser,
   restoreUser,
+  getUserStats,
 } = require('../controllers/userController');
 const { authenticateToken, requireAdmin, requireOwnerOrAdmin } = require('../middleware/auth');
 const {
@@ -32,6 +33,9 @@ router.use(readLimiter, authenticateToken);
 
 // GET /api/users — Admin only
 router.get('/', requireAdmin, getUsers);
+
+// GET /api/users/stats — Admin only (must be before /:id to avoid route conflict)
+router.get('/stats', requireAdmin, getUserStats);
 
 // GET /api/users/:id — Admin or owner
 router.get('/:id', requireOwnerOrAdmin, getUserById);
