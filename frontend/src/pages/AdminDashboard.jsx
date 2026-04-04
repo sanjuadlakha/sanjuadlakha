@@ -16,6 +16,9 @@ import SearchIcon from '@mui/icons-material/Search';
 import LogoutIcon from '@mui/icons-material/Logout';
 import PersonIcon from '@mui/icons-material/Person';
 import RefreshIcon from '@mui/icons-material/Refresh';
+import Brightness4Icon from '@mui/icons-material/Brightness4';
+import Brightness7Icon from '@mui/icons-material/Brightness7';
+import { useThemeMode } from '../context/ThemeContext';
 
 const EMPTY_FORM = {
   username: '', email: '', password: '', role: 'user',
@@ -25,6 +28,7 @@ const EMPTY_FORM = {
 export default function AdminDashboard() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const { mode, toggleMode } = useThemeMode();
 
   const [users, setUsers] = useState([]);
   const [pagination, setPagination] = useState({ page: 1, totalPages: 1, total: 0 });
@@ -133,7 +137,7 @@ export default function AdminDashboard() {
   };
 
   return (
-    <Box sx={{ minHeight: '100vh', bgcolor: 'grey.50' }}>
+    <Box sx={{ minHeight: '100vh', bgcolor: 'background.default' }}>
       {/* Top Bar */}
       <Paper elevation={2} square sx={{ px: 3, py: 1.5 }}>
         <Box display="flex" justifyContent="space-between" alignItems="center">
@@ -148,6 +152,11 @@ export default function AdminDashboard() {
             <Tooltip title="My Profile">
               <IconButton size="small" onClick={() => navigate('/profile')}>
                 <PersonIcon />
+              </IconButton>
+            </Tooltip>
+            <Tooltip title={mode === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}>
+              <IconButton size="small" onClick={toggleMode} data-testid="theme-toggle-btn">
+                {mode === 'dark' ? <Brightness7Icon /> : <Brightness4Icon />}
               </IconButton>
             </Tooltip>
             <Tooltip title="Logout">

@@ -11,10 +11,14 @@ import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import LogoutIcon from '@mui/icons-material/Logout';
 import SaveIcon from '@mui/icons-material/Save';
 import LockIcon from '@mui/icons-material/Lock';
+import Brightness4Icon from '@mui/icons-material/Brightness4';
+import Brightness7Icon from '@mui/icons-material/Brightness7';
+import { useThemeMode } from '../context/ThemeContext';
 
 export default function UserProfile() {
   const { user, logout, refreshUser } = useAuth();
   const navigate = useNavigate();
+  const { mode, toggleMode } = useThemeMode();
 
   const [profileForm, setProfileForm] = useState({
     first_name: user?.first_name || '',
@@ -90,7 +94,7 @@ export default function UserProfile() {
   };
 
   return (
-    <Box sx={{ minHeight: '100vh', bgcolor: 'grey.50' }}>
+    <Box sx={{ minHeight: '100vh', bgcolor: 'background.default' }}>
       {/* Top Bar */}
       <Paper elevation={2} square sx={{ px: 3, py: 1.5 }}>
         <Box display="flex" justifyContent="space-between" alignItems="center">
@@ -106,11 +110,18 @@ export default function UserProfile() {
               My Profile
             </Typography>
           </Box>
-          <Tooltip title="Logout">
-            <IconButton onClick={handleLogout} data-testid="profile-logout-btn">
-              <LogoutIcon />
-            </IconButton>
-          </Tooltip>
+          <Box display="flex" alignItems="center" gap={1}>
+            <Tooltip title={mode === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}>
+              <IconButton onClick={toggleMode} data-testid="theme-toggle-btn">
+                {mode === 'dark' ? <Brightness7Icon /> : <Brightness4Icon />}
+              </IconButton>
+            </Tooltip>
+            <Tooltip title="Logout">
+              <IconButton onClick={handleLogout} data-testid="profile-logout-btn">
+                <LogoutIcon />
+              </IconButton>
+            </Tooltip>
+          </Box>
         </Box>
       </Paper>
 
